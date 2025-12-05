@@ -9,6 +9,7 @@ void releasePart() { digitalWrite(grab_pin, LOW); }
 
 bool moveXYZ(float x_pos, float y_pos, float z_pos)
 {
+  // check if previous movement is done before modefying target coordinates
   if (movement_x_done && movement_y_done && movement_z_done)
   {
     target_x_Pos = x_pos;
