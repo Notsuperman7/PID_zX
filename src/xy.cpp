@@ -52,30 +52,26 @@ void startup_XY()
     {
         Stepper_x->setDirectionPin(dirPin_x);
         Stepper_x->setAutoEnable(true);
-        Stepper_x->setAcceleration(1500); // Set acceleration
-        Stepper_x->setSpeedInHz(2000);    // Set max speed
+        Stepper_x->setAcceleration(2000); // Set acceleration =  5 mm/s²
+        Stepper_x->setSpeedInHz(2000);    // Set max speed = 5 mm/s
     }
     if (Stepper_y)
     {
         Stepper_y->setDirectionPin(dirPin_y);
         Stepper_y->setAutoEnable(true);
-        Stepper_y->setAcceleration(1500); // Set acceleration
+        Stepper_y->setAcceleration(2000); // Set acceleration
         Stepper_y->setSpeedInHz(2000);    // Set max speed
     }
 
     Serial.println("Steppers configured, starting homing...");
-    
-    xTaskCreate(homingTask_x, "Homing_X", 4096, NULL, 2, NULL);
-    xTaskCreate(homingTask_y, "Homing_Y", 4096, NULL, 2, NULL);
-    // Start motion tasks
-    xTaskCreate(motionTask_x, "Motion X", 4096, NULL, 1, NULL);
-    xTaskCreate(motionTask_y, "Motion Y", 4096, NULL, 1, NULL);
+
+
 }
 
 void motionTask_x(void *pvParameters)
 {
     // Wait for homing to complete
-    while (!homingDone_x || !homingDone_y || !homingDone_z)
+    while (!homingDone_x || !homingDone_y)
     {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
@@ -114,7 +110,7 @@ void motionTask_x(void *pvParameters)
 void motionTask_y(void *pvParameters)
 {
     // Wait for homing to complete
-    while (!homingDone_x || !homingDone_y || !homingDone_z)
+    while (!homingDone_x || !homingDone_y)
     {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
@@ -172,6 +168,14 @@ void homingTask_x(void *pvParameters)
     // Stop and set position zero
     Stepper_x->stopMove();
     Stepper_x->setCurrentPosition(0);
+    vTaskDelay(pdMS_TO_TICKS(100)); // Wait for the move to complete  
+    Stepper_x->setSpeedInHz(2000);        // positive speed
+    Stepper_x->setDirectionPin(dirPin_x); // Ensure direction pin is set
+    Stepper_x->moveTo(200); // Move 20mm away from switch
+    vTaskDelay(pdMS_TO_TICKS(100)); // Wait for the move to complete
+
+    Stepper_x->stopMove();
+    Stepper_x->setCurrentPosition(0);
     homingDone_x = true;
     Serial.println("X axis homed to position 0");
 
@@ -198,6 +202,13 @@ void homingTask_y(void *pvParameters)
     }
 
     // Stop and set position zero
+    Stepper_y->stopMove();
+    Stepper_y->setCurrentPosition(0);
+    vTaskDelay(pdMS_TO_TICKS(100)); // Ensure stop is processed
+    Stepper_y->setSpeedInHz(2000);        // positive speed
+    Stepper_y->setDirectionPin(dirPin_y); // Ensure direction pin is set
+    Stepper_y->moveTo(200); // Move 20mm away from switch
+    vTaskDelay(pdMS_TO_TICKS(100)); // Wait for the move to complete
     Stepper_y->stopMove();
     Stepper_y->setCurrentPosition(0);
     homingDone_y = true;

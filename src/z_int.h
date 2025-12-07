@@ -5,5 +5,7 @@ extern float target_z_Pos; // target in mm
 extern volatile bool movement_z_done;
 
 void startup_Z();
+void home_z(void *pvParameters);
+void applyPID(void *parameter);
 
 #endif

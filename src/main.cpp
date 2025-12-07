@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "xy_int.h"
+#include "homing_flags.h"
 #include "z_int.h"
 
 #define grab_pin 10
@@ -48,14 +49,22 @@ void movePart(void *parameter)
   }
 }
 
+
+
 void setup()
 {
   pinMode(grab_pin, OUTPUT);
   startup_XY();
   startup_Z();
-  xTaskCreate(movePart, "movePart", 4096, NULL, 1, NULL);
+    // Start homing tasks
+  xTaskCreate(homingTask_x, "Homing_X", 4096, NULL, 2, NULL); // create X homing task
+  xTaskCreate(homingTask_y, "Homing_Y", 4096, NULL, 2, NULL); // create Y homing task
+  xTaskCreate(home_z, "home_z", 4096, NULL, 2, NULL); // create Z homing task
+  xTaskCreate(applyPID, "applyPID", 4096, NULL, 1, NULL); // create Z motion task
+  xTaskCreate(movePart, "movePart", 4096, NULL, 1, NULL); // create part moving task in XY plane
 }
 
 void loop()
 {
+      vTaskDelay(pdMS_TO_TICKS(1000));
 }

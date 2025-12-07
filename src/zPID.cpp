@@ -62,13 +62,16 @@ void setMotor(int pwm)
 void home_z(void *pvParameters)
 {
     Serial.println("Homing z axis...");
-    setMotor(-100);
+    setMotor(100);
     while (digitalRead(limitSwitchPin_z) == HIGH)
     {
-        delay(1);
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
     setMotor(0);
+    portENTER_CRITICAL(&encMux);
     encoderCount = 0;
+    portEXIT_CRITICAL(&encMux);
+
     homingDone_z = true;
     Serial.println("Z axis homed to position 0");
 
@@ -99,11 +102,20 @@ void applyPID(void *parameter)
     {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+    Serial.println("Starting Z PID control loop...");
+
+    lastTime = micros();
+    lastCount = encoderCount;
 
     while (1)
     {
         unsigned long now = micros();
         float deltaTime = (now - lastTime) / 1e6f;
+
+        if (deltaTime < 0.001f) { // Minimum 1ms update rate
+            vTaskDelay(pdMS_TO_TICKS(1));
+            continue;
+        }
 
         lastTime = now;
 
@@ -112,9 +124,9 @@ void applyPID(void *parameter)
         currentCount = encoderCount;
         portEXIT_CRITICAL(&encMux);
 
+        float currentDistance = computeDistanceMM(currentCount);
         float currentVelocity = (currentCount - lastCount) / deltaTime;
         lastCount = currentCount;
-        float currentDistance = computeDistanceMM(currentCount);
 
         // outer loop displacement control
         float targetVelocity = computePID(posPID, target_z_Pos, currentDistance, deltaTime);
@@ -128,7 +140,7 @@ void applyPID(void *parameter)
             movement_z_done = true;
         }
         setMotor(pwm);
-        delay(10);
+        vTaskDelay(pdMS_TO_TICKS(5)); // 200Hz update rate
     }
 }
 
@@ -154,6 +166,5 @@ void startup_Z()
 
     Serial.println("Ready: PID position control (non-blocking).");
 
-    xTaskCreate(home_z, "home_z", 4096, NULL, 2, NULL);
-    xTaskCreate(applyPID, "applyPID", 4096, NULL, 1, NULL);
+
 }
