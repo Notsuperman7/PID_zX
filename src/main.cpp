@@ -31,25 +31,25 @@ void movePart(void *parameter)
 {
   while (1)
   {
-    while (moveXYZ(40, 68, 0) != true)
+    while (moveXYZ(380, 177, 0) != true)
     {
       vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    delay(5000);
-    while (moveXYZ(95, 128, 0) != true)
-    {
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    delay(5000);
-    while (moveXYZ(150, 225, 0) != true)
-    {
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    delay(5000);
-    while (moveXYZ(205, 290, 0) != true)
-    {
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    // delay(5000);
+    // while (moveXYZ(95, 128, 0) != true)
+    // {
+    //   vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
+    // delay(5000);
+    // while (moveXYZ(150, 225, 0) != true)
+    // {
+    //   vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
+    // delay(5000);
+    // while (moveXYZ(205, 290, 0) != true)
+    // {
+    //   vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
     // grabPart();
 
     // while (moveXYZ(100, 100, 0) != true)

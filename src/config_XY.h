@@ -11,7 +11,7 @@
 
 // Define X/Y axis constants
 // X Axis Motor Configuration
-constexpr int maxTravelDistance_x = 430; // 430mm
+constexpr int maxTravelDistance_x = 380; // 430mm
 constexpr int stepsPerMM_x = 25;         // steps per mm for the motor  => pitch = 8mm, 200 steps/rev, 16 microsteps
 constexpr int microsteps_x = 16;         // microstepping setting
 // Y Axis Motor Configuration
