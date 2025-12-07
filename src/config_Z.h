@@ -2,8 +2,8 @@
 #define _CONFIG_H_
 
 // Define Z axis pin connections
-#define IN1 0
-#define IN2 2
+#define IN1 2
+#define IN2 16
 #define ENA 15
 #define ENC_A 32
 #define ENC_B 33

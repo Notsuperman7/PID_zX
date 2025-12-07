@@ -108,6 +108,7 @@ void applyPID(void *parameter)
     lastTime = micros();
     lastCount = encoderCount;
     static float lastTarget = -999.0f;
+    unsigned long lastDebugTime = 0; // For debug output timing
 
     while (1)
     {
@@ -132,6 +133,7 @@ void applyPID(void *parameter)
         {
             lastTarget = target_z_Pos;
             movement_z_done = false;
+            Serial.println("Z target changed to: " + String(target_z_Pos) + " mm");
         }
 
         float currentDistance = computeDistanceMM(currentCount);
@@ -142,6 +144,20 @@ void applyPID(void *parameter)
         float targetVelocity = computePID(posPID, target_z_Pos, currentDistance, deltaTime);
         // inner loop: velocity control
         int pwm = (int)computePID(velPID, targetVelocity, currentVelocity, deltaTime);
+
+        // Debug output every 500ms
+        if (now - lastDebugTime >= 500000) // 500ms in microseconds
+        {
+            Serial.print("Z Pos: ");
+            Serial.print(currentDistance, 2);
+            Serial.print(" mm | Target: ");
+            Serial.print(target_z_Pos, 2);
+            Serial.print(" mm | Vel: ");
+            Serial.print(currentVelocity, 2);
+            Serial.print(" mm/s | PWM: ");
+            Serial.println(pwm);
+            lastDebugTime = now;
+        }
 
         // if error smaller than 0.5mm stop
         if (abs(target_z_Pos - currentDistance) <= 0.5f)
