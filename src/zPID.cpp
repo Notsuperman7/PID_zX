@@ -65,7 +65,7 @@ void home_z(void *pvParameters)
     setMotor(-100);
     while (digitalRead(limitSwitchPin_z) == HIGH)
     {
-        vTaskDelay(pdMS_TO_TICKS(1));
+        delay(1);
     }
     setMotor(0);
     encoderCount = 0;
@@ -128,7 +128,7 @@ void applyPID(void *parameter)
             movement_z_done = true;
         }
         setMotor(pwm);
-        vTaskDelay(10);
+        delay(10);
     }
 }
 
@@ -140,7 +140,7 @@ void startup_Z()
     pinMode(IN2, OUTPUT);
     pinMode(ENA, OUTPUT);
 
-    pinMode(limitSwitchPin_z, INPUT_PULLUP);
+    pinMode(limitSwitchPin_z, INPUT);
     pinMode(ENC_A, INPUT); // use INPUT; use external pull-ups if needed
     pinMode(ENC_B, INPUT);
 

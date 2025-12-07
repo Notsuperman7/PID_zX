@@ -64,15 +64,7 @@ void startup_XY()
     }
 
     Serial.println("Steppers configured, starting homing...");
-
-    // Start homing in a separate task so setup can return
-    /*xTaskCreate(
-      homingTask,
-      "Homing Task",
-      4096,
-      NULL,
-      2,
-      NULL);*/
+    
     xTaskCreate(homingTask_x, "Homing_X", 4096, NULL, 2, NULL);
     xTaskCreate(homingTask_y, "Homing_Y", 4096, NULL, 2, NULL);
     // Start motion tasks
@@ -185,7 +177,6 @@ void homingTask_x(void *pvParameters)
 
     vTaskDelete(NULL);
 }
-
 
 void homingTask_y(void *pvParameters)
 {

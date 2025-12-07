@@ -1,4 +1,3 @@
-
 #include <Arduino.h>
 #include "xy_int.h"
 #include "z_int.h"
@@ -48,7 +47,6 @@ void movePart(void *parameter)
     releasePart();
   }
 }
-
 
 void setup()
 {
