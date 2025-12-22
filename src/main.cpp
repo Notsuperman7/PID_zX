@@ -30,39 +30,136 @@ bool moveXYZ(float x_pos, float y_pos, float z_pos)
 void movePart(void *parameter)
 {
   while (1)
-  {
-    while (moveXYZ(50, 50, 10) != true)
+  { 
+     
+    while (moveXYZ(380, 195, 0) != true)
     {
       vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    // delay(5000);
-    // while (moveXYZ(95, 128, 0) != true)
-    // {
-    //   vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
-    // delay(5000);
-    // while (moveXYZ(150, 225, 0) != true)
-    // {
-    //   vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
-    // delay(5000);
-    // while (moveXYZ(205, 290, 0) != true)
-    // {
-    //   vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
-    // grabPart();
+      vTaskDelay(pdMS_TO_TICKS(1000));
 
-    // while (moveXYZ(100, 100, 0) != true)
-    // {
-    //   vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
-    // while (moveXYZ(100, 100, 50) != true)
-    // {
-    //   vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
-    // releasePart();
-  }
-}
+    while (moveXYZ(35, 65, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+
+     while (moveXYZ(35, 125, 0) != true)
+     {
+       vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    
+     while (moveXYZ(35, 223, 0) != true)
+     {
+       vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+
+    
+     while (moveXYZ(35, 286, 0) != true)
+     {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+
+    
+     while (moveXYZ(90, 286, 0) != true)
+     {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+
+      vTaskDelay(pdMS_TO_TICKS(1000));
+
+    
+     while (moveXYZ(90, 223, 0) != true)
+     {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+
+      vTaskDelay(pdMS_TO_TICKS(1000));
+
+    
+     while (moveXYZ(90, 125, 0) != true)
+     {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+
+      vTaskDelay(pdMS_TO_TICKS(1000));
+
+    
+     while (moveXYZ(90, 65, 0) != true)
+     {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+
+      vTaskDelay(pdMS_TO_TICKS(1000));
+
+   while (moveXYZ(144, 65, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    
+   while (moveXYZ(144, 125, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    
+   while (moveXYZ(144, 223, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    
+   while (moveXYZ(144, 286, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    
+      
+    while (moveXYZ(199, 286, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    
+    while (moveXYZ(199, 223, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    
+    while (moveXYZ(199, 125, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    
+    while (moveXYZ(199, 65, 0) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+      vTaskDelay(pdMS_TO_TICKS(1000));
+
+    
+      /*
+     grabPart();
+
+     while (moveXYZ(100, 100, 0) != true)
+     {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+    
+     while (moveXYZ(100, 100, 50) != true)
+     {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+     }
+     releasePart();
+  }*/
+}}
 
 void setup()
 {
@@ -79,7 +176,6 @@ void setup()
   xTaskCreate(motionTask_y, "motionTask_y", 4096, NULL, 2, NULL); // create Y motion task
 }
 
-void loop()
-{
+void loop(){
   vTaskDelay(pdMS_TO_TICKS(1000));
 }

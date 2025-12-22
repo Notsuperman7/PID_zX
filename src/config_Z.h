@@ -5,8 +5,8 @@
 #define IN1 2
 #define IN2 16
 #define ENA 15
-#define ENC_A 25
-#define ENC_B 26
+#define ENC_A 26
+#define ENC_B 25
 #define limitSwitchPin_z 14
 
 // Define Z axis constants
