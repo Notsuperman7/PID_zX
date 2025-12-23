@@ -51,8 +51,9 @@ reserveBox[4].x = 199;
 reserveBox[4].y = 65;
 reserveBox[5].x = 199;
 reserveBox[5].y = 125;
-reserveBox[5].y = 223;
 reserveBox[6].x = 199;
-reserveBox[6].y = 286;
+reserveBox[6].y = 223;
+reserveBox[7].x = 199;
+reserveBox[7].y = 286;
 
 #endif
