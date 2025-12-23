@@ -169,7 +169,7 @@ void setup()
   // Start homing tasks
   xTaskCreate(homingTask_x, "Homing_X", 4096, NULL, 3, NULL);     // create X homing task
   xTaskCreate(homingTask_y, "Homing_Y", 4096, NULL, 3, NULL);     // create Y homing task
-  xTaskCreate(home_z, "home_z", 4096, NULL, 1, NULL);             // create Z homing task
+  xTaskCreate(home_z, "home_z", 4096, NULL, 4, NULL);             // create Z homing task
   xTaskCreate(applyPID, "applyPID", 4096, NULL, 1, NULL);         // create Z motion task
   xTaskCreate(movePart, "movePart", 4096, NULL, 2, NULL);         // create part moving task in XY plane
   xTaskCreate(motionTask_x, "motionTask_x", 4096, NULL, 2, NULL); // create X motion task
