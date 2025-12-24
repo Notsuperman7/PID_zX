@@ -9,6 +9,7 @@
 
 
 #define grab_pin 10
+#define start_pin
 
 void grabPart() { digitalWrite(grab_pin, HIGH); }
 void releasePart() { digitalWrite(grab_pin, LOW); }
@@ -98,6 +99,12 @@ void movePart(int from_x, int from_y, int from_z, int to_x, int to_y, int to_z)
 
 void partAssembly(void *parameter)
 {
+  while (!homingDone_x || !homingDone_y || !homingDone_z) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    Send("S");
+    delay(1000);
   while (1)
   {
     currentPart.isOccupied=false;
@@ -127,6 +134,7 @@ void partAssembly(void *parameter)
       break;
     case 'N':
       currentPart.isOccupied=false;
+    delay(1000);
       break;
     default:
     delay(1000);
@@ -152,6 +160,7 @@ void partAssembly(void *parameter)
       assemblyParts[i].hasLid=false;
       for(j;j<8;j++)
       {
+        //if a lid of the same color exists
         if(reserveParts[j].isOccupied && (reserveParts[j].isWhite==currentPart.isWhite))
         {
           movePart(reserveBox[j].x,reserveBox[j].y,z_lid,assemBox[i].x,assemBox[i].y,z_lid_on_base);
@@ -160,14 +169,17 @@ void partAssembly(void *parameter)
           break;
         }
       }
+      Send("F");
       
     }
+    //managing lid parts
     else if(currentPart.isOccupied && (!currentPart.isBase))
     {
       int i=0;
       int j=0;
       for(i;i<8;i++)
       {
+        //if a base of same color already exists
         if((!assemblyParts[i].hasLid) && assemblyParts[i].isOccupied && (assemblyParts[i].isWhite==currentPart.isWhite))
         {
           movePart(sortBox.x,sortBox.y,z_lid,assemBox[i].x,assemBox[i].y,z_lid_on_base);
@@ -190,7 +202,9 @@ void partAssembly(void *parameter)
         reserveParts[j].isWhite=currentPart.isWhite;
         reserveParts[j].isBase=false;
       }
+      Send("F");
     }
+
     delay(1000);
   }
 }
@@ -206,13 +220,12 @@ void setup()
   xTaskCreate(homingTask_x, "Homing_X", 4096, NULL, 3, NULL);     // create X homing task
   xTaskCreate(homingTask_y, "Homing_Y", 4096, NULL, 3, NULL);     // create Y homing task
   xTaskCreate(home_z, "home_z", 4096, NULL, 3, NULL);             // create Z homing task
-  xTaskCreate(applyPID, "applyPID", 4096, NULL, 1, NULL);         // create Z motion task
-  xTaskCreate(partAssembly, "partAssembly", 4096, NULL, 2, NULL); // create part moving task in XY plane
+  xTaskCreate(applyPID, "applyPID", 4096, NULL, 2, NULL);         // create Z motion task
+  xTaskCreate(partAssembly, "partAssembly", 4096, NULL, 1, NULL); // create part moving task in XY plane
   xTaskCreate(motionTask_x, "motionTask_x", 4096, NULL, 2, NULL); // create X motion task
   xTaskCreate(motionTask_y, "motionTask_y", 4096, NULL, 2, NULL); // create Y motion task
 }
 
 void loop()
 {
-  vTaskDelay(pdMS_TO_TICKS(1000));
 }
