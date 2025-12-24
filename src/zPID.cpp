@@ -2,184 +2,199 @@
 #include "config_Z.h"
 #include "homing_flags.h"
 
-float target_z_Pos = 00.0; // target in mm
+/* ====== Global targets/flags ====== */
+float target_z_Pos = 0.0f;               // mm
 volatile bool movement_z_done = true;
 volatile bool homingDone_z = false;
 
+/* ====== Encoder state ====== */
 volatile long encoderCount = 0;
-volatile uint8_t lastEncoderState = 0; // Store last encoder state for quadrature decoding
-volatile uint32_t isrCallCount = 0;    // Debug: count ISR calls
+volatile uint32_t isrCallCount = 0;
 
 unsigned long lastTime = 0;
 long lastCount = 0;
-// No lookup table needed - simple direction detection on RISING edge of A
-// Direction determined by B phase when A rises
+// ===== MATLAB tuned gains (Z axis) =====
+constexpr float Kp_pos = 42.8323f;   // 1/s  (v_sp = Kp_pos * pos_error)
+constexpr float Kp_vel = 2.7956f;   // PWM / (mm/s)
+constexpr float Ki_vel = 1.2809f;   // PWM / mm   (integral of velocity error)
 
-// ---------------- Encoder ISR ----------------
-// Interrupt on RISING edge of ENC_A only - more reliable for fast movement
+// ===== Limits / safety =====
+constexpr int PWM_MIN = -220;
+constexpr int PWM_MAX = 220;
+
+constexpr float VMAX   = 100.0f;    // mm/s  (safe start)
+constexpr float POS_TOL = 0.5f;     // mm (stop band)
+
+
+/* ---------------- Encoder ISR ---------------- */
 void IRAM_ATTR encoderISR()
 {
-    isrCallCount++; // Debug counter
-
-    // Read both lines using ESP32 GPIO registers
+    isrCallCount++;
     uint32_t gpioState = REG_READ(GPIO_IN_REG);
-    uint8_t a = (gpioState >> ENC_A) & 1;
     uint8_t b = (gpioState >> ENC_B) & 1;
 
-    // On rising edge of A: if B is low, we're going forward; if B is high, backward
-    if (b)
-    {
-        encoderCount--; // Backward
-    }
-    else
-    {
-        encoderCount++; // Forward
-    }
+    // rising edge on A: direction by B
+    if (b) encoderCount--;
+    else   encoderCount++;
 }
 
-void setupPWM()
-{
-    ledcSetup(0, 20000, 8); // channel 0, 20kHz, 8-bit
-    ledcAttachPin(ENA, 0);  // attach ch 0 to ENA pin
-    ledcWrite(0, 0);
-}
+/* ---------------- PWM + Motor ---------------- */
+// void setupPWM()
+// {
+//     ledcSetup(0, 20000, 8);
+//     ledcAttachPin(ENA, 0);
+//     ledcWrite(0, 0);
+// }
 
 void setMotor(int pwm)
 {
+    //pwm = constrain(pwm, PWM_MIN, PWM_MAX);
+    analogWrite(ENA, abs(pwm));
 
-    ledcWrite(0, abs(pwm));
-    if (pwm > 0)
-    {
+    if (pwm > 0) {
         // DOWN
         digitalWrite(IN1, LOW);
         digitalWrite(IN2, HIGH);
-    }
-    else if (pwm < 0)
-    {
+    } else if (pwm < 0) {
         // UP
         digitalWrite(IN1, HIGH);
         digitalWrite(IN2, LOW);
-    }
-    else
-    {
+    } else {
         digitalWrite(IN1, LOW);
         digitalWrite(IN2, LOW);
     }
 }
+
+/* ---------------- Units conversion ---------------- */
+static inline float computeDistanceMM(long count)
+{
+    // count -> rev -> mm
+    float rev = (count / (float)PPR);
+    return rev * screw_lead;
+}
+
+/* ---------------- Homing task ---------------- */
 void home_z(void *pvParameters)
 {
     Serial.println("Homing z axis...");
-    setMotor(-180);
-    vTaskDelay(pdMS_TO_TICKS(50)); // Let motor start
-    while (digitalRead(limitSwitchPin_z) == HIGH)
-    {
+    setMotor(-70);
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    while (digitalRead(limitSwitchPin_z) == HIGH) {
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+
+    setMotor(0);
+    vTaskDelay(pdMS_TO_TICKS(50));
+    setMotor(120);
+    while (digitalRead(limitSwitchPin_z) != HIGH) {
         vTaskDelay(pdMS_TO_TICKS(1));
     }
     setMotor(0);
-    encoderCount = 0; // Reset encoder count - atomic assignment, no critical section needed
-    isrCallCount = 0; // Reset ISR call counter for diagnostics
+    
+    encoderCount = 0;
+    isrCallCount = 0;
 
     homingDone_z = true;
     Serial.println("Z axis homed to position 0");
-
     vTaskDelete(NULL);
 }
 
-inline float computeDistanceMM(long count)
-{
-    float rev = (count / (float)PPR); // revolutions
-    return rev * screw_lead;          // linear mm
-}
-
-// ---------------- PID compute ----------------
-float computePID(PID &pid, float setpoint, float measurement, float deltaTime)
-{
-    float error = setpoint - measurement;
-    pid.integral += 0.5f * (error + pid.prevError) * deltaTime; // trapezoidal integration
-    pid.integral = constrain(pid.integral, pid.outMin, pid.outMax);
-    float derivative = (error - pid.prevError) / deltaTime;
-    float out = pid.Kp * error + pid.Ki * pid.integral + pid.Kd * derivative;
-    pid.prevError = error;
-    return constrain(out, pid.outMin, pid.outMax);
-}
-
+/* ---------------- Main cascaded control ---------------- */
 void applyPID(void *parameter)
 {
-    while (!homingDone_x || !homingDone_y || !homingDone_z)
-    {
+    while (!homingDone_x || !homingDone_y || !homingDone_z) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    Serial.println("Starting Z PID control loop...");
+    Serial.println("Starting Z cascaded control: Position(P) + Velocity(PI)");
 
     lastTime = micros();
     lastCount = encoderCount;
-    static float lastTarget = -999.0f;
-    unsigned long lastDebugTime = 0; // For debug output timing
+
+    float velIntegral = 0.0f;          // integral of velocity error
+    float lastTarget = -999.0f;
+    unsigned long lastDebugTime = 0;
 
     while (1)
     {
         unsigned long now = micros();
-        float deltaTime = (now - lastTime) / 1e6f;
+        float dt = (now - lastTime) * 1e-6f;
 
-        if (deltaTime < 0.001f)
-        { // Minimum 1ms update rate
+        if (dt < 0.001f) { // >= 1ms
             vTaskDelay(pdMS_TO_TICKS(1));
             continue;
         }
-
         lastTime = now;
 
-        // Read encoder count - no critical section needed for single atomic read on ESP32
         long currentCount = encoderCount;
-        uint32_t currentIsrCalls = isrCallCount;
 
-        // Track target position changes
-        if (target_z_Pos != lastTarget)
-        {
+        // detect target change
+        if (target_z_Pos != lastTarget) {
             lastTarget = target_z_Pos;
             movement_z_done = false;
-            Serial.println("Z target changed to: " + String(target_z_Pos) + " mm");
+            Serial.println("Z target changed to: " + String(target_z_Pos, 2) + " mm");
         }
 
-        float currentDistance = computeDistanceMM(currentCount);
-        float currentVelocity = computeDistanceMM(currentCount - lastCount) / deltaTime; // Convert to mm/s
+        // Measurements (mm, mm/s)
+        float pos_mm = computeDistanceMM(currentCount);
+        float vel_mm_s = computeDistanceMM(currentCount - lastCount) / dt;
         lastCount = currentCount;
 
-        // outer loop displacement control
-        float targetVelocity = computePID(posPID, target_z_Pos, currentDistance, deltaTime);
-        // inner loop: velocity control
-        int pwm = (int)computePID(velPID, targetVelocity, currentVelocity, deltaTime);
+        // -------- Outer loop: Position P (produces velocity setpoint) --------
+        float e_pos = target_z_Pos - pos_mm;                 // mm
+        float v_sp = Kp_pos * e_pos;                         // mm/s
+        v_sp = constrain(v_sp, -VMAX, VMAX);                 // clamp
 
-        // Debug output every 500ms
-        if (now - lastDebugTime >= 500000) // 500ms in microseconds
+        // -------- Inner loop: Velocity PI (produces PWM) --------
+        float e_vel = v_sp - vel_mm_s;                       // mm/s
+
+        // candidate integrator update
+        float velIntegral_candidate = velIntegral + e_vel * dt;
+
+        // unsaturated control
+        float u_unsat = Kp_vel * e_vel + Ki_vel * velIntegral_candidate;
+
+        // saturate
+        float u_sat = constrain(u_unsat, (float)PWM_MIN, (float)PWM_MAX);
+
+        // Anti-windup (simple): only accept integrator update if not saturating
+        // or if the error would drive the output back from saturation.
+        bool saturatingHigh = (u_unsat > PWM_MAX);
+        bool saturatingLow  = (u_unsat < PWM_MIN);
+
+        if ((!saturatingHigh && !saturatingLow) ||
+            (saturatingHigh && e_vel < 0) ||
+            (saturatingLow  && e_vel > 0))
         {
-            Serial.print("Z Pos: ");
-            Serial.print(currentDistance, 2);
-            Serial.print(" mm | Target: ");
-            Serial.print(target_z_Pos, 2);
-            Serial.print(" mm | Count: ");
-            Serial.print(currentCount);
-            Serial.print(" | ISR calls: ");
-            Serial.print(currentIsrCalls);
-            Serial.print(" | Vel: ");
-            Serial.print(currentVelocity, 2);
-            Serial.print(" mm/s | PWM: ");
-            Serial.println(pwm);
-            lastDebugTime = now;
+            velIntegral = velIntegral_candidate;
         }
 
-        // if error smaller than 0.5mm stop
-        if (abs(target_z_Pos - currentDistance) <= 0.5f)
-        {
-            Serial.println("Z position reached: " + String(currentDistance) + " mm");
+        int pwm = (int)u_sat;
+
+        // stop condition near target
+        if (fabs(e_pos) <= POS_TOL) {
             pwm = 0;
             movement_z_done = true;
         }
+
         setMotor(pwm);
-        vTaskDelay(pdMS_TO_TICKS(5)); // 200Hz update rate
+
+        // Debug every 500ms
+        if (now - lastDebugTime >= 500000) {
+            Serial.print("Z Pos: "); Serial.print(pos_mm, 2);
+            Serial.print(" mm | Target: "); Serial.print(target_z_Pos, 2);
+            Serial.print(" mm | Vel: "); Serial.print(vel_mm_s, 2);
+            Serial.print(" mm/s | v_sp: "); Serial.print(v_sp, 2);
+            Serial.print(" | PWM: "); Serial.print(pwm);
+            Serial.print(" | ISR: "); Serial.println(isrCallCount);
+            lastDebugTime = now;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(5)); // ~200 Hz
     }
 }
 
+/* ---------------- Startup ---------------- */
 void startup_Z()
 {
     Serial.begin(115200);
@@ -187,51 +202,22 @@ void startup_Z()
     pinMode(IN1, OUTPUT);
     pinMode(IN2, OUTPUT);
     pinMode(ENA, OUTPUT);
+    analogWrite(ENA, 0);
 
-    pinMode(limitSwitchPin_z, INPUT);
-    // Enable internal pull-ups on encoder lines to avoid floating inputs
-    pinMode(ENC_A, INPUT_PULLUP);
-    pinMode(ENC_B, INPUT_PULLUP);
+    pinMode(limitSwitchPin_z, INPUT_PULLUP);
+    pinMode(ENC_A, INPUT_PULLDOWN);
+    pinMode(ENC_B, INPUT_PULLDOWN);
 
-    // setup Enable PWM for enable pin
-    setupPWM();
-
-    // Initialize last encoder state from the pins before enabling interrupts
-    {
-        uint32_t gpioState = REG_READ(GPIO_IN_REG);
-        bool a = (gpioState >> ENC_A) & 1;
-        bool b = (gpioState >> ENC_B) & 1;
-        lastEncoderState = (a << 1) | b;
-        Serial.print("Initial encoder state - A(GPIO");
-        Serial.print(ENC_A);
-        Serial.print("):");
-        Serial.print(a);
-        Serial.print(" B(GPIO");
-        Serial.print(ENC_B);
-        Serial.print("):");
-        Serial.println(b);
-    }
-
-    // Attach interrupt on RISING edge of ENC_A only - simpler and more reliable
-    Serial.print("Attempting to attach interrupt to GPIO");
-    Serial.print(ENC_A);
-    Serial.println("...");
+    //setupPWM();
 
     int intNum = digitalPinToInterrupt(ENC_A);
-    Serial.print("Interrupt number: ");
-    Serial.println(intNum);
-
-    if (intNum == NOT_AN_INTERRUPT)
-    {
+    if (intNum == NOT_AN_INTERRUPT) {
         Serial.println("ERROR: GPIO pin does not support interrupts!");
-    }
-    else
-    {
+    } else {
         attachInterrupt(intNum, encoderISR, RISING);
-        Serial.println("Interrupt attached successfully on RISING edge");
+        Serial.println("Interrupt attached on ENC_A RISING");
     }
 
     lastTime = micros();
-
-    Serial.println("Ready: PID position control (non-blocking).");
+    Serial.println("Ready: Z cascaded control (P pos + PI vel).");
 }

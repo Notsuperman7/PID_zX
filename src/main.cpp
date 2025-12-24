@@ -2,7 +2,7 @@
 #include "xy_int.h"
 #include "homing_flags.h"
 #include "z_int.h"
-#include "positions.h"
+//#include "positions.h"
 
 
 #define grab_pin 10
@@ -62,7 +62,7 @@ void partAssembly(void *parameter)
   while (1)
   {
 
-    while (moveXYZ(380, 195, 0) != true)
+    while (moveXYZ(380, 195, 10) != true)
     {
       vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -194,7 +194,7 @@ void setup()
   // Start homing tasks
   xTaskCreate(homingTask_x, "Homing_X", 4096, NULL, 3, NULL);     // create X homing task
   xTaskCreate(homingTask_y, "Homing_Y", 4096, NULL, 3, NULL);     // create Y homing task
-  xTaskCreate(home_z, "home_z", 4096, NULL, 1, NULL);             // create Z homing task
+  xTaskCreate(home_z, "home_z", 4096, NULL, 3, NULL);             // create Z homing task
   xTaskCreate(applyPID, "applyPID", 4096, NULL, 1, NULL);         // create Z motion task
   xTaskCreate(partAssembly, "partAssembly", 4096, NULL, 2, NULL); // create part moving task in XY plane
   xTaskCreate(motionTask_x, "motionTask_x", 4096, NULL, 2, NULL); // create X motion task

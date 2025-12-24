@@ -176,7 +176,10 @@ void homingTask_x(void *pvParameters)
     Stepper_x->setSpeedInHz(2000);        // positive speed
     Stepper_x->setDirectionPin(dirPin_x); // Ensure direction pin is set
     Stepper_x->moveTo(200);               // Move 20mm away from switch
-    vTaskDelay(pdMS_TO_TICKS(100));       // Wait for the move to complete
+while (digitalRead(limitSwitchPin_x) != HIGH)
+    { 
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }   
     Stepper_x->stopMove();
     Stepper_x->setCurrentPosition(0);
 
@@ -211,8 +214,11 @@ void homingTask_y(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(100));       // Ensure stop is processed
     Stepper_y->setSpeedInHz(2000);        // positive speed
     Stepper_y->setDirectionPin(dirPin_y); // Ensure direction pin is set
-    Stepper_y->moveTo(0);                 // Move 20mm away from switch
-    vTaskDelay(pdMS_TO_TICKS(100));       // Wait for the move to complete
+    while (digitalRead(limitSwitchPin_y) != HIGH)
+    {
+                vTaskDelay(pdMS_TO_TICKS(1));
+    }                
+    vTaskDelay(pdMS_TO_TICKS(100)); 
     Stepper_y->stopMove();
     Stepper_y->setCurrentPosition(0);
 
