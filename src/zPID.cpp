@@ -38,14 +38,7 @@ void IRAM_ATTR encoderISR()
     else   encoderCount++;
 }
 
-/* ---------------- PWM + Motor ---------------- */
-// void setupPWM()
-// {
-//     ledcSetup(0, 20000, 8);
-//     ledcAttachPin(ENA, 0);
-//     ledcWrite(0, 0);
-// }
-
+/* ---------------- Motor ---------------- */
 void setMotor(int pwm)
 {
     //pwm = constrain(pwm, PWM_MIN, PWM_MAX);

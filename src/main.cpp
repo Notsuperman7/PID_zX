@@ -9,7 +9,8 @@
 
 
 #define grab_pin 10
-#define start_pin
+#define start_pin 36
+#define stop_pin 39
 
 void grabPart() { digitalWrite(grab_pin, HIGH); }
 void releasePart() { digitalWrite(grab_pin, LOW); }
@@ -212,6 +213,8 @@ void partAssembly(void *parameter)
 void setup()
 {
   pinMode(grab_pin, OUTPUT);
+  pinMode(start_pin,INPUT_PULLUP);
+  pinMode(stop_pin,INPUT_PULLUP);
   startup_XY();
   startup_Z();
   Sender_Init();
