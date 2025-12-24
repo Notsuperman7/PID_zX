@@ -5,8 +5,13 @@
 #include "z_int.h"
 #include "Sender.h"
 #include "Reciver.h"
+<<<<<<< HEAD
 #include "positions.h"
 
+=======
+
+// #include "positions.h"
+>>>>>>> 66575c10a17520510e3ab59894337375f52762ea
 
 #define grab_pin 10
 
@@ -86,7 +91,7 @@ void movePart(int from_x, int from_y, int from_z, int to_x, int to_y, int to_z)
     delay(1000);
   }
   delay(1000);
-  
+
   while (moveXYZ(to_x, to_y, to_z) != true)
   {
     delay(1000);
@@ -102,6 +107,7 @@ void partAssembly(void *parameter)
   {
     currentPart.isOccupied=false;
 
+<<<<<<< HEAD
     char msg = Receive()[0];
     switch (msg)
     {
@@ -192,6 +198,13 @@ void partAssembly(void *parameter)
       }
     }
     delay(1000);
+=======
+    while (moveXYZ(175, 315, 70) != true)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    vTaskDelay(pdMS_TO_TICKS(3000));
+>>>>>>> 66575c10a17520510e3ab59894337375f52762ea
   }
 }
 
