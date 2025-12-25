@@ -8,7 +8,7 @@
 #include "positions.h"
 
 
-#define grab_pin 10
+#define grab_pin 13
 #define start_pin 36
 #define stop_pin 39
 
@@ -111,6 +111,7 @@ void partAssembly(void *parameter)
     currentPart.isOccupied=false;
 
     char msg = Receive()[0];
+    Serial.println(msg);
     switch (msg)
     {
     case 'A':
@@ -212,6 +213,7 @@ void partAssembly(void *parameter)
 
 void setup()
 {
+  Serial.begin(115200);
   pinMode(grab_pin, OUTPUT);
   pinMode(start_pin,INPUT_PULLUP);
   pinMode(stop_pin,INPUT_PULLUP);

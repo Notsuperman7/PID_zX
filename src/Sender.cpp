@@ -45,4 +45,6 @@ void Send(const char* message) {
   msg.text[sizeof(msg.text) - 1] = '\0';
 
   esp_now_send(receiverMAC, (uint8_t*)&msg, sizeof(msg));
+  Serial.print("Sending: ");
+  Serial.println(message);
 }
