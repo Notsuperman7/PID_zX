@@ -15,6 +15,15 @@
 void grabPart() { digitalWrite(grab_pin, HIGH); }
 void releasePart() { digitalWrite(grab_pin, LOW); }
 
+volatile bool stopFlag = false;
+
+void off(){
+  stopFlag = true;
+  
+}
+void on(){
+  stopFlag=false;
+}
 
 bool moveXYZ(float x_pos, float y_pos, float z_pos)
 {
@@ -218,6 +227,8 @@ void setup()
   pinMode(grab_pin, OUTPUT);
   pinMode(start_pin,INPUT_PULLUP);
   pinMode(stop_pin,INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(stop_pin),off,FALLING);
+  attachInterrupt(digitalPinToInterrupt(start_pin),on,FALLING);
   startup_XY();
   startup_Z();
   Sender_Init();
@@ -234,4 +245,5 @@ void setup()
 
 void loop()
 {
+  
 }

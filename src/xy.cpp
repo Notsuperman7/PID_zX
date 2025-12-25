@@ -53,7 +53,7 @@ void startup_XY()
         Stepper_x->setDirectionPin(dirPin_x);
         Stepper_x->setAutoEnable(true);
         Stepper_x->setAcceleration(2000); // Set acceleration =  5 mm/s²
-        Stepper_x->setSpeedInHz(2000);    // Set max speed = 5 mm/s
+        Stepper_x->setSpeedInHz(3000);    // Set max speed = 5 mm/s
     }
     if (Stepper_y)
     {
@@ -173,13 +173,9 @@ void homingTask_x(void *pvParameters)
     Stepper_x->stopMove();
     Stepper_x->setCurrentPosition(0);
     vTaskDelay(pdMS_TO_TICKS(100));       // Wait for the move to complete
-    Stepper_x->setSpeedInHz(2000);        // positive speed
+    Stepper_x->setSpeedInHz(3000);        // positive speed
     Stepper_x->setDirectionPin(dirPin_x); // Ensure direction pin is set
-    Stepper_x->moveTo(200);               // Move 20mm away from switch
-while (digitalRead(limitSwitchPin_x) != HIGH)
-    { 
-        vTaskDelay(pdMS_TO_TICKS(1));
-    }   
+    Stepper_x->move(200);               // Move 20mm away from switch
     Stepper_x->stopMove();
     Stepper_x->setCurrentPosition(0);
 
@@ -213,11 +209,8 @@ void homingTask_y(void *pvParameters)
     Stepper_y->setCurrentPosition(0);
     vTaskDelay(pdMS_TO_TICKS(100));       // Ensure stop is processed
     Stepper_y->setSpeedInHz(2000);        // positive speed
-    Stepper_y->setDirectionPin(dirPin_y); // Ensure direction pin is set
-    while (digitalRead(limitSwitchPin_y) != HIGH)
-    {
-                vTaskDelay(pdMS_TO_TICKS(1));
-    }                
+    Stepper_y->setDirectionPin(dirPin_y); // Ensure direction pin is set  
+    Stepper_y->move(200);         
     vTaskDelay(pdMS_TO_TICKS(100)); 
     Stepper_y->stopMove();
     Stepper_y->setCurrentPosition(0);
